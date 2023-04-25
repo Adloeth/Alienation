@@ -1,4 +1,4 @@
-[gd_scene load_steps=32 format=3 uid="uid://d48jqrttt76"]
+[gd_scene load_steps=34 format=3 uid="uid://d48jqrttt76"]
 
 [ext_resource type="Texture2D" uid="uid://b4gkohdvc6obv" path="res://graphics/textures/circle.png" id="4_2djub"]
 [ext_resource type="ArrayMesh" uid="uid://d2mcetw4xpgnu" path="res://graphics/models/ship_interior/Room_Wall.res" id="4_ca50n"]
@@ -11,7 +11,8 @@
 [ext_resource type="ArrayMesh" uid="uid://x2ipjavyxhf6" path="res://graphics/models/ship_interior/Room_DoorFrame.res" id="10_3h727"]
 [ext_resource type="ArrayMesh" uid="uid://hljw22wq707l" path="res://graphics/models/ship_interior/Room_Floor.res" id="11_kcibh"]
 [ext_resource type="ArrayMesh" uid="uid://dj8dstptjbgvq" path="res://graphics/models/ship_interior/Room_Ceiling.res" id="12_7k11g"]
-[ext_resource type="ArrayMesh" uid="uid://dhebx7fkhs7j3" path="res://graphics/models/ship_interior/Room_WallShortLow.res" id="12_s0art"]
+[ext_resource type="ArrayMesh" uid="uid://mlml7s6c1e22" path="res://graphics/models/ship_interior/Room_Railing.res" id="13_7fr8u"]
+[ext_resource type="ArrayMesh" uid="uid://dhebx7fkhs7j3" path="res://graphics/models/ship_interior/Room_WallShortLow.res" id="13_a03kd"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_30bj3"]
 radius = 0.25
@@ -156,6 +157,10 @@ _surfaces = [{
 blend_shape_mode = 0
 
 [sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_xcp6c"]
+plane = Plane(0, 1, 0, -0.05)
+
+[sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_ecukw"]
+data = PackedVector3Array(1, 1.5, -1.5, -1, 0, -4, 1, 0, -4, 1, 1.5, -1.5, -1, 1.5, -1.5, -1, 0, -4, 1, 3, 1, -1, 1.5, -1.5, 1, 1.5, -1.5, 1, 3, 1, -1, 3, 1, -1, 1.5, -1.5, -1, 1.5, -1, 1, 0, -1, -1, 0, -1, -1, 1.5, -1, 1, 1.5, -1, 1, 0, -1, -1, 2.4, 0.6, 1, 1.5, -1, -1, 1.5, -1, -1, 2.4, 0.6, 1, 2.4, 0.6, 1, 1.5, -1, -1, 2.4, 1, 1, 2.4, 0.6, -1, 2.4, 0.6, -1, 2.4, 1, 1, 2.4, 1, 1, 2.4, 0.6, 1, 1.5, -1, 1, 0, -4, 1, 0, -1, 1, 1.5, -1, 1, 1.5, -1.5, 1, 0, -4, -1, 1.5, -1.5, -1, 0, -1, -1, 0, -4, -1, 1.5, -1.5, -1, 1.5, -1, -1, 0, -1, -1, 3, 1, -1, 1.5, -1, -1, 1.5, -1.5, -1, 3, 1, -1, 2.4, 0.6, -1, 1.5, -1, -1, 2.4, 0.6, -1, 3, 1, -1, 2.4, 1, 1, 2.4, 0.6, 1, 1.5, -1.5, 1, 1.5, -1, 1, 2.4, 0.6, 1, 3, 1, 1, 1.5, -1.5, 1, 2.4, 0.6, 1, 2.4, 1, 1, 3, 1)
 
 [node name="Node3D" type="Node3D"]
 
@@ -166,7 +171,7 @@ environment = ExtResource("7_ypy6o")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0, -3)
 
 [node name="CharacterBody3D" type="CharacterBody3D" parent="Player" node_paths=PackedStringArray("cameraHolder", "cameraNode", "camera", "debugFPS", "debug", "staminaProgressBar")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.02922, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 1.02922, 0)
 floor_constant_speed = true
 script = ExtResource("9_8ltfd")
 minMaxSpeed = Vector2(1.5, 7)
@@ -181,9 +186,8 @@ moveBobbingSlope = 0.5
 moveBobbingAmplitude = 0.05
 moveBobbingAngleAmplitude = 0.5
 fovSpeedIncrease = 30.0
-minMaxStaminaConsumptionSpeed = Vector2(50, 8)
+staminaSecondsToProgress = Vector3(-5, 20, 8)
 staminaTimeToStartRegen = 3.0
-staminaRegenSpeed = 15.0
 staminaRegenThreshold = 0.5
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Player/CharacterBody3D"]
@@ -197,7 +201,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
 fov = 90.0
 
 [node name="SpotLight3D" type="SpotLight3D" parent="Player/CharacterBody3D/CameraHolder"]
-visible = false
 spot_range = 50.0
 spot_angle = 75.0
 
@@ -205,11 +208,6 @@ spot_angle = 75.0
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 3)
 material_override = ExtResource("8_an0sg")
 mesh = SubResource("SphereMesh_ky81t")
-
-[node name="MeshInstance3D2" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -1)
-material_override = ExtResource("8_an0sg")
-mesh = ExtResource("12_7k11g")
 
 [node name="Control" type="Control" parent="."]
 layout_mode = 3
@@ -281,13 +279,14 @@ playerCamera = NodePath("../Player/CharacterBody3D/CameraHolder/Camera3D")
 wallMesh = ExtResource("4_ca50n")
 wallShortMesh = ExtResource("5_xlj1e")
 wallLowMesh = ExtResource("7_1efh5")
-wallShortLowMesh = ExtResource("12_s0art")
+wallShortLowMesh = ExtResource("13_a03kd")
 doorFrameMesh = ExtResource("10_3h727")
 floorMesh = ExtResource("11_kcibh")
 ceilingMesh = ExtResource("12_7k11g")
+railingMesh = ExtResource("13_7fr8u")
 
 [node name="OfficeDoorFrame2" type="MeshInstance3D" parent="ShipTest"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, -2.75)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.5, 0, -11.25)
 mesh = SubResource("ArrayMesh_s8xwn")
 skeleton = NodePath("")
 
@@ -297,7 +296,7 @@ mesh = SubResource("ArrayMesh_mrdgl")
 skeleton = NodePath("")
 
 [node name="MechanicalDoorFrame2" type="MeshInstance3D" parent="ShipTest"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, -2.75)
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, -1.25, 0, -5)
 mesh = SubResource("ArrayMesh_mjdmw")
 skeleton = NodePath("")
 
@@ -339,3 +338,13 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.15618, 7.69711, -3.65782)
 shadow_enabled = true
 shadow_blur = 3.0
 omni_range = 100.0
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="."]
+transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 15, 0, -10)
+mesh = ExtResource("13_a03kd")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="MeshInstance3D2"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="MeshInstance3D2/StaticBody3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 9.53674e-07)
+shape = SubResource("ConcavePolygonShape3D_ecukw")

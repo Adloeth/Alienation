@@ -19,9 +19,8 @@ public partial class PlayerController : CharacterBody3D
     [Export] private float fovSpeedIncrease = 10;
 
     [Export] private float maxStamina = 100.0f;
-    [Export] private Vector2 minMaxStaminaConsumptionSpeed = new Vector2(0, 8);
+    [Export] private Vector3 staminaSecondsToProgress = new Vector3(-5, 50, 8);
     [Export] private float staminaTimeToStartRegen = 10;
-    [Export] private float staminaRegenSpeed = 1;
     [Export(PropertyHint.Range, "0,1,")] private float staminaRegenThreshold = 0.25f;
     private float stamina;
     private float staminaRegenTime;
@@ -43,7 +42,19 @@ public partial class PlayerController : CharacterBody3D
 
     float speed = 0;
     float CurrentSpeed => staminaRegenTime < 1 ? minMaxSpeed.X : Mathf.Lerp(minMaxSpeed.X, minMaxSpeed.Y, speed);
-    float CurrentStaminaConsumption => staminaRegenTime < 1 ? 0 : Mathf.Lerp(minMaxStaminaConsumptionSpeed.X, minMaxStaminaConsumptionSpeed.Y, speed);
+    float CurrentStaminaConsumption 
+    { 
+        get 
+        {
+            if(staminaRegenTime < 1)
+                return 0;
+
+            if(speed <= staminaRegenThreshold)
+                return Mathf.Lerp(staminaSecondsToProgress.X, -staminaSecondsToProgress.Y, speed.Normalize(0, staminaRegenThreshold));
+
+            return Mathf.Lerp(staminaSecondsToProgress.Y, staminaSecondsToProgress.Z, speed.Normalize(staminaRegenThreshold, 1));
+        }
+    }
     float CurrentFov => IsMoving ? Mathf.Lerp(baseFov, baseFov + fovSpeedIncrease, speed) : baseFov;
 
     private Vector3 targetCameraAngle;
@@ -81,14 +92,21 @@ public partial class PlayerController : CharacterBody3D
             staminaRegenTime = 0;
             speed = 0;
         }
+
+        float currentStaminaConsumption = CurrentStaminaConsumption;
+        float staminaLoss = 0;
         
-        float staminaLoss = IsMoving ? maxStamina / CurrentStaminaConsumption : 0;
-        if(speed <= staminaRegenThreshold || !IsMoving)
-            staminaLoss -= staminaRegenSpeed;
+        if(currentStaminaConsumption != 0)
+        {
+            staminaLoss = IsMoving ? maxStamina / currentStaminaConsumption : 0;
+            //if(speed <= staminaRegenThreshold || !IsMoving)
+            //    staminaLoss -= staminaRegenSpeed;
+        }
 
         stamina = Mathf.Clamp(stamina - staminaLoss * delta, 0, maxStamina);
-        debug.Text = "Speed: " + speed + "\nRegenTime: " + staminaRegenTime + "\nInitLoss: " + (maxStamina / CurrentStaminaConsumption) + "\nLoss: " + staminaLoss;
         staminaProgressBar.Value = stamina / maxStamina;
+        
+        debug.Text = "Speed: " + speed + "\nRegenTime: " + staminaRegenTime + "\nConsumption: " + currentStaminaConsumption + "\nInitLoss: " + (maxStamina / currentStaminaConsumption) + "\nLoss: " + staminaLoss;
 
         camera.Fov = Mathf.Lerp(camera.Fov, CurrentFov, speed > 0 ? 0.005f : 0.02f);
     }

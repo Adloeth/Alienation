@@ -82,10 +82,11 @@ public enum RoomPart : byte
     Floor,
     Ceiling,
 
-    RailingLong,
-    RailingShort,
+    Railing,
     
-    Stairs
+    Stairs,
+
+    None = 255
 }
 
 public struct RoomRenderInfo
@@ -142,20 +143,20 @@ public class RoomArea
         return false;
     }
 
-    private static void AddWallX(ICollection<RoomRenderInfo> result, Door[] doors, Basis basis, Vector2I position, Vector2I size, FTType level, int i, bool pos)
+    private static void AddWallX(ICollection<RoomRenderInfo> result, Door[] doors, Basis basis, Vector2I position, Vector2I size, FTType level, int i, bool pos, RoomPart wall = RoomPart.Wall, RoomPart shortWall = RoomPart.WallShort, RoomPart doorFrame = RoomPart.DoorFrame)
     {
         Vector3 vec = GetWallPosX(position, size, level, i, pos);
-        result.Add(new RoomRenderInfo(new Transform3D(basis, vec), HasDoorAt(doors, pos ? Orientation.Up : Orientation.Down, i) ? RoomPart.DoorFrame : RoomPart.Wall));
+        result.Add(new RoomRenderInfo(new Transform3D(basis, vec), HasDoorAt(doors, pos ? Orientation.Up : Orientation.Down, i) ? doorFrame : wall));
         if(i > 0)
-            result.Add(new RoomRenderInfo(new Transform3D(basis, vec - new Vector3(1.25f, 0, 0)), RoomPart.WallShort));
+            result.Add(new RoomRenderInfo(new Transform3D(basis, vec - new Vector3(1.25f, 0, 0)), shortWall));
     }
 
-    private static void AddWallY(ICollection<RoomRenderInfo> result, Door[] doors, Basis basis, Vector2I position, Vector2I size, FTType level, int j, bool pos)
+    private static void AddWallY(ICollection<RoomRenderInfo> result, Door[] doors, Basis basis, Vector2I position, Vector2I size, FTType level, int j, bool pos, RoomPart wall = RoomPart.Wall, RoomPart shortWall = RoomPart.WallShort, RoomPart doorFrame = RoomPart.DoorFrame)
     {
         Vector3 vec = GetWallPosY(position, size, level, j, pos);
-        result.Add(new RoomRenderInfo(new Transform3D(basis, vec), HasDoorAt(doors, pos ? Orientation.Right : Orientation.Left, j) ? RoomPart.DoorFrame : RoomPart.Wall));
+        result.Add(new RoomRenderInfo(new Transform3D(basis, vec), HasDoorAt(doors, pos ? Orientation.Right : Orientation.Left, j) ? doorFrame : wall));
         if(j > 0)
-            result.Add(new RoomRenderInfo(new Transform3D(basis, vec - new Vector3(0, 0, 1.25f)), RoomPart.WallShort));
+            result.Add(new RoomRenderInfo(new Transform3D(basis, vec - new Vector3(0, 0, 1.25f)), shortWall));
     }
 
     public IEnumerable<RoomRenderInfo> Render()
@@ -170,7 +171,7 @@ public class RoomArea
         if(!openedSides.HasFlag(OpenedSide.Bottom))
             result.Add(new RoomRenderInfo(
                 new Transform3D(Basis.FromScale(new Vector3(size.X, 0, size.Y) * totalWallWidth + Vector3.Up),
-                new Vector3(position.X, 0, position.Y + size.Y - 1) * totalWallWidth + Vector3.Up * level * totalWallHeight - new Vector3(1, 0, -1) * totalWallWidth * 0.5f),
+                new Vector3(position.X + size.X * 0.5f, 0, position.Y + (size.Y - 2) * 0.5f) * totalWallWidth + Vector3.Up * level * totalWallHeight - new Vector3(1, 0, -1) * totalWallWidth * 0.5f),
                 RoomPart.Floor
             ));
 
@@ -178,7 +179,7 @@ public class RoomArea
         if(!openedSides.HasFlag(OpenedSide.Top))
             result.Add(new RoomRenderInfo(
                 new Transform3D(Basis.FromScale(new Vector3(size.X, 0, size.Y) * totalWallWidth + Vector3.Up),
-                new Vector3(position.X, 0, position.Y + size.Y - 1) * totalWallWidth + Vector3.Up * (level + 1) * totalWallHeight - Vector3.Up * wallShortSize - new Vector3(1, 0, -1) * totalWallWidth * 0.5f),
+                new Vector3(position.X + size.X * 0.5f, 0, position.Y + (size.Y - 2) * 0.5f) * totalWallWidth + Vector3.Up * (level + 1) * totalWallHeight - Vector3.Up * wallShortSize - new Vector3(1, 0, -1) * totalWallWidth * 0.5f),
                 RoomPart.Ceiling
             ));
 
@@ -188,6 +189,11 @@ public class RoomArea
             //Generate the wall on the back
             if(!openedSides.HasFlag(OpenedSide.Back))
                 AddWallX(result, doors, backwardBasis, position, size, level, i, false);
+            else if(openedSides.HasFlag(OpenedSide.Bottom))
+            {
+                AddWallX(result, doors, backwardBasis, position, size, level, i, false, RoomPart.Railing, RoomPart.WallShort, RoomPart.None);
+                AddWallX(result, doors, forwardBasis, position - Vector2I.Down, size, level, i, false, RoomPart.None, RoomPart.WallShort, RoomPart.None);
+            }
             
             //Generate the wall on the front
             if(!openedSides.HasFlag(OpenedSide.Front))
@@ -195,6 +201,12 @@ public class RoomArea
             //If opened on the front, short walls need to be added at the end of the opening to merge with other RoomAreas
             else
             {
+                if(openedSides.HasFlag(OpenedSide.Bottom))
+                {
+                    AddWallX(result, doors, forwardBasis, position, size, level, i, false, RoomPart.Railing, RoomPart.WallShort, RoomPart.None);
+                    AddWallX(result, doors, backwardBasis, position - Vector2I.Up, size, level, i, false, RoomPart.None, RoomPart.WallShort, RoomPart.None);
+                }
+
                 result.Add(new RoomRenderInfo(new Transform3D(leftBasis, GetWallPosY(position, size, level, size.Y, false) - new Vector3(0, 0, 1.25f)), RoomPart.WallShort));
                 result.Add(new RoomRenderInfo(new Transform3D(rightBasis, GetWallPosY(position, size, level, size.Y, true) - new Vector3(0, 0, 1.25f)), RoomPart.WallShort));
             }
@@ -222,6 +234,11 @@ public class RoomArea
             //Generate the wall on the left
             if(!openedSides.HasFlag(OpenedSide.Left))
                 AddWallY(result, doors, leftBasis, position, size, level, j, false);
+            else if(openedSides.HasFlag(OpenedSide.Bottom))
+            {
+                AddWallY(result, doors, leftBasis, position, size, level, j, false, RoomPart.Railing, RoomPart.WallShort, RoomPart.None);
+                AddWallY(result, doors, backwardBasis, position - Vector2I.Left, size, level, j, false, RoomPart.None, RoomPart.WallShort, RoomPart.None);
+            }
 
             //Generate the wall on the right
             if(!openedSides.HasFlag(OpenedSide.Right))
@@ -229,6 +246,12 @@ public class RoomArea
             //If opened on the right, short walls need to be added at the end of the opening to merge with other RoomAreas
             else
             {
+                if(openedSides.HasFlag(OpenedSide.Bottom))
+                {
+                    AddWallY(result, doors, rightBasis, position, size, level, j, false, RoomPart.Railing, RoomPart.WallShort, RoomPart.None);
+                    AddWallY(result, doors, backwardBasis, position - Vector2I.Right, size, level, j, false, RoomPart.None, RoomPart.WallShort, RoomPart.None);
+                }
+
                 result.Add(new RoomRenderInfo(new Transform3D(backwardBasis, GetWallPosX(position, size, level, size.X, false) - new Vector3(1.25f, 0, 0)), RoomPart.WallShort));
                 result.Add(new RoomRenderInfo(new Transform3D(forwardBasis, GetWallPosX(position, size, level, size.X, true) - new Vector3(1.25f, 0, 0)), RoomPart.WallShort));
             }

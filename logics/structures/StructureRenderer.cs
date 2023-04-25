@@ -7,12 +7,14 @@ public class StructureInteriorInstance
     private Rid scenario;
     private Rid space;
     private Multimesh[] multimeshes;
+    private List<BoxCollider> colliders;
 
     public StructureInteriorInstance(Rid scenario, Rid space, Multimesh[] multimeshes)
     {
         this.scenario = scenario;
         this.space = space;
         this.multimeshes = multimeshes;
+        this.colliders = new List<BoxCollider>(10);
     }
 
     ~StructureInteriorInstance()
@@ -24,7 +26,7 @@ public class StructureInteriorInstance
     public Rid Scenario => scenario;
     public Rid Space => space;
     public Multimesh[] Multimeshes => multimeshes;
-
+    public List<BoxCollider> Colliders => colliders;
 }
 
 public partial class StructureRenderer : Node
@@ -37,6 +39,7 @@ public partial class StructureRenderer : Node
     [Export] private Mesh doorFrameMesh;
     [Export] private Mesh floorMesh;
     [Export] private Mesh ceilingMesh;
+    [Export] private Mesh railingMesh;
 
     Rid interiorViewport;
 
@@ -51,7 +54,7 @@ public partial class StructureRenderer : Node
         structTest = new Structure(
             new Room(
                 new RoomArea(Vector2I.Zero, new Vector2I(9, -4), new Door[] { new Door(0, Orientation.Left, 2), new Door(0, Orientation.Down, 5) }, 0, OpenedSide.Front | OpenedSide.Right | OpenedSide.Top),
-                new RoomArea(Vector2I.Zero, new Vector2I(9, -4), null, 1, OpenedSide.Top | OpenedSide.Bottom | OpenedSide.Back),
+                new RoomArea(Vector2I.Zero, new Vector2I(9, -4), new Door[] { new Door(0, Orientation.Down, 0) }, 1, OpenedSide.Top | OpenedSide.Bottom | OpenedSide.Back),
                 new RoomArea(new Vector2I(0, -5), new Vector2I(9, -7), null, 1, OpenedSide.Top | OpenedSide.Front),
                 new RoomArea(Vector2I.Zero, new Vector2I(9, -7), null, 2, OpenedSide.Bottom),
                 new RoomArea(new Vector2I(0, 1), new Vector2I(9, 2), null, 0, OpenedSide.Back),
@@ -74,7 +77,7 @@ public partial class StructureRenderer : Node
         GD.Print(PhysicsServer3D.ShapeGetType(PhysicsServer3D.BodyGetShape(body, 0)));
         GD.Print(PhysicsServer3D.ShapeGetData(PhysicsServer3D.BodyGetShape(body, 0)));*/
 
-        Instantiate(structTest, playerCamera.GetWorld3D().Scenario);
+        Instantiate(structTest, playerCamera.GetWorld3D().Scenario, playerCamera.GetWorld3D().Space);
         Render(structTest);
     }
 
@@ -89,7 +92,7 @@ public partial class StructureRenderer : Node
         meshes.SetTransform(meshes.VisibleInstanceCount - 1, transform);
     }
 
-    private Multimesh[] GenerateMultimeshes(Rid scenario) => new Multimesh[7]
+    private Multimesh[] GenerateMultimeshes(Rid scenario) => new Multimesh[8]
     {
         new Multimesh(scenario, wallMesh        , false, false),
         new Multimesh(scenario, wallShortMesh   , false, false),
@@ -97,14 +100,15 @@ public partial class StructureRenderer : Node
         new Multimesh(scenario, wallShortLowMesh, false, false),
         new Multimesh(scenario, doorFrameMesh   , false, false),
         new Multimesh(scenario, floorMesh       , false, false),
-        new Multimesh(scenario, ceilingMesh     , false, false)
+        new Multimesh(scenario, ceilingMesh     , false, false),
+        new Multimesh(scenario, railingMesh     , false, false)
     };
 
-    public void Instantiate(Structure structure, Rid? scenario = null)
+    public void Instantiate(Structure structure, Rid? scenario = null, Rid? space = null)
     {
         if(scenario == null) scenario = RenderingServer.ScenarioCreate();
-        Rid space = PhysicsServer3D.SpaceCreate();
-        interiorInstances.Add(structure, new StructureInteriorInstance(scenario.Value, space, GenerateMultimeshes(scenario.Value)));
+        if(space == null) space = PhysicsServer3D.SpaceCreate();
+        interiorInstances.Add(structure, new StructureInteriorInstance(scenario.Value, space.Value, GenerateMultimeshes(scenario.Value)));
     }
 
     public void Render(Structure structure)
@@ -128,8 +132,13 @@ public partial class StructureRenderer : Node
 
         foreach(RoomRenderInfo info in infos)
         {
+            if(info.type == RoomPart.None)
+                continue;
+
             AddModel(instance, (int)info.type, info.transform);
-            //GD.Print("Adding wall at " + info.transform.Origin);
+
+            if(info.type == RoomPart.Floor)
+                instance.Colliders.Add(new BoxCollider(instance.Space, info.transform.Origin, Quaternion.Identity, new Vector3(info.transform.Basis.Scale.X, 0.02f, info.transform.Basis.Scale.Z) / 2));
         }
     }
 

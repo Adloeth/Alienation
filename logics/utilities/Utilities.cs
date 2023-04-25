@@ -11,6 +11,8 @@ public enum Orientation : byte
 
 public static class Utils
 {
+    public static float Normalize(this float value, float min, float max) => (value - min) / (max - min);
+
     public static Vector2I RotateToSize(Vector2I vector, Orientation orientation)
     {
         switch(orientation)

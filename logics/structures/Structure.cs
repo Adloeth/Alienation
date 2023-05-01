@@ -4,18 +4,180 @@ global using FTType = System.Int16;
 using Godot;
 using System;
 using System.Collections.Generic;
-
+using System.Collections.ObjectModel;
 
 public class Structure
 {
-    private Room[] rooms;
+    private List<Room> rooms;
+
+    public Structure(int capacity)
+    {
+        rooms = new List<Room>(capacity);
+    }
 
     public Structure(params Room[] rooms)
     {
-        this.rooms = rooms;
+        this.rooms = new List<Room>(rooms);
     }
 
-    public Room[] Rooms => rooms;
+    public ReadOnlyCollection<Room> Rooms => new ReadOnlyCollection<Room>(rooms);
+
+    /// <summary>
+    /// Checks whether a bounds intersect with one of the room's bounds. The room bounds encapsulate the whole room, but that doesn't mean there is an intesection with the room.
+    /// This method can be used to rule out rooms to check intersections from.
+    /// </summary>
+    private void IsNearRoom(Aabbi bounds, ICollection<Room> result)
+    {
+        for(int i = 0; i < rooms.Count; i++)
+            if(rooms[i].BoundingBox.Intersect(bounds))
+            {
+                GD.Print("Intersected with " + rooms[i].BoundingBox);
+                result.Add(rooms[i]);
+            }
+    }
+
+    public bool IntersectRoom(Aabbi bounds)
+    {
+        List<Room> result = new List<Room>(rooms.Count);
+        IsNearRoom(bounds, result);
+        
+        if(result.Count == 0)
+            return false;
+
+        for(int i = 0; i < result.Count; i++)
+        {
+            ReadOnlyCollection<RoomArea> areas = result[i].Areas;
+            for(int j = 0; j < areas.Count; j++)
+                if(areas[j].BoundingBox.Intersect(bounds))
+                    return true;
+        }
+
+        return false;
+    }
+
+    private bool IntersectRooms(Aabbi bounds, ICollection<Room> result)
+    {
+        List<Room> nearResult = new List<Room>(rooms.Count);
+        IsNearRoom(bounds, nearResult);
+        GD.Print("IntersectRoom: " + nearResult.Count);
+        
+        if(nearResult.Count == 0)
+            return false;
+
+        for(int i = 0; i < nearResult.Count; i++)
+        {
+            ReadOnlyCollection<RoomArea> areas = nearResult[i].Areas;
+            for(int j = 0; j < areas.Count; j++)
+                if(areas[j].BoundingBox.Intersect(bounds))
+                {
+                    result.Add(nearResult[i]);
+                    break;
+                }
+        }
+
+        return result.Count > 0;
+    }
+
+    public Room[] IntersectRooms(FromTo fromTo, FTType level)
+    {
+        List<Room> result = new List<Room>(rooms.Count);
+        IntersectRooms(fromTo.ToBounds(level), result);
+        return result.ToArray();
+    }
+
+    public Room[] IntersectRooms(FromTo3D fromTo)
+    {
+        List<Room> result = new List<Room>(rooms.Count);
+        IntersectRooms(fromTo.ToBounds(), result);
+        return result.ToArray();
+    }
+
+    public Issue PlaceRoom(Vector2I start, Vector2I end, FTType level) => PlaceRoom(new FromTo(start, end), level);
+
+    public Issue PlaceRoom(FromTo fromTo, FTType level)
+    {
+        Room[] intersectedRooms = IntersectRooms(fromTo, level);
+        if(intersectedRooms.Length > 0)
+            return new InvalidPositionRoomIntersectIssue(intersectedRooms);
+
+        rooms.Add(new Room(fromTo, level, 2));
+        return null;
+    }
+
+    public Issue ExpandRoom(Vector3I start, Vector3I end) => ExpandRoom(new FromTo3D(start, end));
+
+    public Issue ExpandRoom(FromTo3D fromTo)
+    {
+        Room[] intersectedRooms = IntersectRooms(fromTo);
+        if(intersectedRooms.Length == 0)
+            return new InvalidExpandNoRoomIssue();
+
+        if(intersectedRooms.Length > 1)
+            return new InvalidExpandRoomIntersectIssue(intersectedRooms);
+
+        Room selectedRoom = intersectedRooms[0];
+        selectedRoom.Expand(fromTo);
+        GD.Print("Selected room is " + rooms.IndexOf(selectedRoom));
+
+        return null;
+    }
+}
+
+public class InvalidExpandNoRoomIssue : Issue
+{
+    public InvalidExpandNoRoomIssue()
+    {
+
+    }
+
+    protected override void HandleExec()
+    {
+        GD.PrintErr(string.Concat("Cannot expand room because it none were selected"));
+    }
+}
+
+public class InvalidExpandRoomIntersectIssue : Issue
+{
+    private Room[] intersectedRooms;
+
+    public InvalidExpandRoomIntersectIssue(Room[] intersectedRooms)
+    {
+        this.intersectedRooms = intersectedRooms;
+    }
+
+    public Room[] IntersectedRooms => intersectedRooms;
+
+    protected override void HandleExec()
+    {
+        string rooms = "";
+        for(int i = 1; i < intersectedRooms.Length; i++)
+            rooms = string.Concat(rooms, i == 1 ? "{ " : ", ", i);
+        rooms = string.Concat(rooms, " }");
+
+        GD.PrintErr(string.Concat("Cannot expand room because it intersected with these other rooms : \n", rooms));
+    }
+}
+
+public class InvalidPositionRoomIntersectIssue : Issue
+{
+    private Room[] intersectedRooms;
+
+    public InvalidPositionRoomIntersectIssue(Room[] intersectedRooms)
+    {
+        this.intersectedRooms = intersectedRooms;
+    }
+
+    public Room[] IntersectedRooms => intersectedRooms;
+
+    protected override void HandleExec()
+    {
+        string rooms = "";
+        for(int i = 0; i < intersectedRooms.Length; i++)
+            rooms = string.Concat(rooms, i == 0 ? "{ " : ", ", i);
+        rooms = string.Concat(rooms, " }");
+
+        GD.PrintErr(string.Concat("Invalid position for room because it intersected with these rooms : \n", rooms));
+    }
 }
 
 public class Door
@@ -41,17 +203,57 @@ public class Room
 {
     private byte type;
 
-    private RoomArea[] areas;
+    private List<RoomArea> areas;
+
+    public Room(int capacity = 1)
+    {
+        areas = new List<RoomArea>(capacity);
+    }
+
+    public Room(FromTo fromTo, FTType level, int capacity = 1) : this(capacity)
+    {
+        areas.Add(new RoomArea(fromTo, level));
+    }
 
     public Room(params RoomArea[] areas)
     {
-        this.areas = areas;
+        this.areas = new List<RoomArea>(areas);
+    }
+
+    public ReadOnlyCollection<RoomArea> Areas => new ReadOnlyCollection<RoomArea>(areas);
+    public byte Type { get => type; set => type = value; }
+
+    public Aabbi BoundingBox
+    {
+        get
+        {
+            if(areas.Count == 0)
+                throw new Exception("Room with no areas should not exist.");
+
+            Aabbi bounds = new Aabbi();
+            for(int i = 0; i < areas.Count; i++)
+            {
+                if(i == 0)
+                {
+                    bounds = areas[0].BoundingBox;
+                    continue;
+                }
+                
+                bounds.Expand(areas[i].BoundingBox);
+            }
+            return bounds;
+        }
+    }
+
+    public void Expand(FromTo3D fromTo)
+    {
+        
     }
 
     public IEnumerable<RoomRenderInfo>[] Render()
     {
-        IEnumerable<RoomRenderInfo>[] result = new IEnumerable<RoomRenderInfo>[areas.Length];
-        for(int i = 0; i < areas.Length; i++)
+        IEnumerable<RoomRenderInfo>[] result = new IEnumerable<RoomRenderInfo>[areas.Count];
+        for(int i = 0; i < areas.Count; i++)
             result[i] = areas[i].Render();
         return result;
     }
@@ -105,17 +307,54 @@ public class RoomArea
 {
     public FromTo fromTo;
     public FTType level;
-    public OpenedSide openedSides;
     private Door[] doors;
 
-    public RoomArea(Vector2I start, Vector2I end, Door[] doors, FTType level, OpenedSide openedSides) : this(new FromTo(start, end), doors, level, openedSides) { }
+    public RoomArea neighbourRight;
+    public RoomArea neighbourLeft;
+    public RoomArea neighbourTop;
+    public RoomArea neighbourBottom;
+    public RoomArea neighbourFront;
+    public RoomArea neighbourBack;
 
-    public RoomArea(FromTo fromTo, Door[] doors, FTType level, OpenedSide openedSides)
+    public Aabbi BoundingBox => fromTo.ToBounds(level);
+
+    public RoomArea this[int i]
     {
-        this.doors = doors == null ? new Door[0] : doors;
+        get
+        {
+            switch(i)
+            {
+                case 0: return neighbourRight;
+                case 1: return neighbourLeft;
+                case 2: return neighbourTop;
+                case 3: return neighbourBottom;
+                case 4: return neighbourFront;
+                case 5: return neighbourBack;
+                default: throw new IndexOutOfRangeException();
+            }
+        }
+        set
+        {
+            switch(i)
+            {
+                case 0: neighbourRight  = value; break;
+                case 1: neighbourLeft   = value; break;
+                case 2: neighbourTop    = value; break;
+                case 3: neighbourBottom = value; break;
+                case 4: neighbourFront  = value; break;
+                case 5: neighbourBack   = value; break;
+                default: throw new IndexOutOfRangeException();
+            }
+        }
+    }
+
+    public RoomArea(Vector2I start, Vector2I end, FTType level) : this(new FromTo(start, end), level) { }
+
+    public RoomArea(FromTo fromTo, FTType level)
+    {
+        this.doors = null;
         this.fromTo = fromTo;
         this.level = level;
-        this.openedSides = openedSides;
     }
 
     private static readonly Basis forwardBasis = new Basis(Vector3.Up, 0);
@@ -129,6 +368,31 @@ public class RoomArea
     private const float totalWallWidth = wallWidth + wallShortSize;
     private const float totalWallHeight = wallHeight + wallShortSize;
 
+    public OpenedSide CalculateOpenSides()
+    {
+        OpenedSide result = OpenedSide.None;
+
+        if(neighbourLeft != null)
+            result |= OpenedSide.Left;
+        
+        if(neighbourRight != null)
+            result |= OpenedSide.Right;
+
+        if(neighbourTop != null)
+            result |= OpenedSide.Top;
+
+        if(neighbourBottom != null)
+            result |= OpenedSide.Bottom;
+
+        if(neighbourFront != null)
+            result |= OpenedSide.Front;
+
+        if(neighbourBack != null)
+            result |= OpenedSide.Back;
+
+        return result;
+    }
+
     private static Vector3 GetWallPosX(Vector2I position, Vector2I size, FTType level, int i, bool pos)
         => new Vector3(position.X + i, 0, position.Y + (pos ? size.Y - 1 : 0)) * totalWallWidth + Vector3.Up * level * totalWallHeight;
 
@@ -137,9 +401,10 @@ public class RoomArea
 
     private static bool HasDoorAt(Door[] doors, Orientation orientation, int shift)
     {
-        for(int i = 0; i < doors.Length; i++)
-            if(doors[i].Orientation == orientation && doors[i].Position == shift)
-                return true;
+        if(doors != null)
+            for(int i = 0; i < doors.Length; i++)
+                if(doors[i].Orientation == orientation && doors[i].Position == shift)
+                    return true;
         return false;
     }
 
@@ -161,6 +426,7 @@ public class RoomArea
 
     public IEnumerable<RoomRenderInfo> Render()
     {
+        OpenedSide openedSides = CalculateOpenSides();
         if(openedSides == OpenedSide.All)
             return null;
 
@@ -308,4 +574,52 @@ public struct FromTo
 
     public Vector2I Position => new Vector2I(fromX, fromY);
     public Vector2I Size => new Vector2I(toX - fromX, toY - fromY) + Vector2I.One;
+
+    public Aabbi ToBounds(FTType level) => new Aabbi(new Vector3I(fromX, level, fromY), new Vector3I(toX - fromX, level, toY - fromY));
+}
+
+public struct FromTo3D
+{
+    public FTType fromX, fromY, fromZ, toX, toY, toZ;
+
+    public FromTo3D(Vector3I start, Vector3I end)
+    {
+        if(start.X < end.X)
+        {
+            fromX = (FTType)start.X;
+              toX = (FTType)  end.X;
+        }
+        else
+        {
+            fromX = (FTType)  end.X;
+              toX = (FTType)start.X;
+        }
+
+        if(start.Y < end.Y)
+        {
+            fromY = (FTType)start.Y;
+              toY = (FTType)  end.Y;
+        }
+        else
+        {
+            fromY = (FTType)  end.Y;
+              toY = (FTType)start.Y;
+        }
+
+        if(start.Z < end.Z)
+        {
+            fromZ = (FTType)start.Z;
+              toZ = (FTType)  end.Z;
+        }
+        else
+        {
+            fromZ = (FTType)  end.Z;
+              toZ = (FTType)start.Z;
+        }
+    }
+
+    public Vector3I Position => new Vector3I(fromX, fromY, fromZ);
+    public Vector3I Size => new Vector3I(toX - fromX, toY - fromY, toZ - fromZ) + Vector3I.One;
+
+    public Aabbi ToBounds() => new Aabbi(new Vector3I(fromX, fromY, fromZ), new Vector3I(toX - fromX, toY - fromY, toZ - fromZ));
 }

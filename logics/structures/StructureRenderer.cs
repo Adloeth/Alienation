@@ -51,7 +51,7 @@ public partial class StructureRenderer : Node
     {
         interiorInstances = new Dictionary<Structure, StructureInteriorInstance>();
 
-        structTest = new Structure(
+        /*structTest = new Structure(
             new Room(
                 new RoomArea(Vector2I.Zero, new Vector2I(9, -4), new Door[] { new Door(0, Orientation.Left, 2), new Door(0, Orientation.Down, 5) }, 0, OpenedSide.Front | OpenedSide.Right | OpenedSide.Top),
                 new RoomArea(Vector2I.Zero, new Vector2I(9, -4), new Door[] { new Door(0, Orientation.Down, 0) }, 1, OpenedSide.Top | OpenedSide.Bottom | OpenedSide.Back),
@@ -63,7 +63,18 @@ public partial class StructureRenderer : Node
             new Room(
                 new RoomArea(new Vector2I(3,-5), new Vector2I(7, -7), new Door[] { new Door(0, Orientation.Up, 2) }, 0, OpenedSide.None)
             )
-        );
+        );*/
+
+        structTest = new Structure(10);
+
+        Issue issue = structTest.PlaceRoom(Vector2I.Zero, new Vector2I(9, -4), 0);
+        Issue.Handle(issue);
+
+        issue = structTest.PlaceRoom(new Vector2I(0, -5), new Vector2I(1, -6), 0);
+        Issue.Handle(issue);
+
+        issue = structTest.ExpandRoom(Vector3I.Zero, new Vector3I(9, 1, -4));
+        Issue.Handle(issue);
 
         /*Rid box = PhysicsServer3D.BoxShapeCreate();
         PhysicsServer3D.ShapeSetData(box, Vector3.One);

@@ -72,3 +72,49 @@ public static class Utils
         }
     }
 }
+
+public struct Aabbi
+{
+    public Vector3I position;
+    public Vector3I size;
+
+    public Aabbi(Vector3I position, Vector3I size)
+    {
+        this.position = position;
+        this.size = size;
+    }
+
+    public Vector3I Min => position;
+    public Vector3I Max => position + size;
+
+    public override string ToString() => string.Concat('(', Min, ", ", Max, ')');
+
+    public bool Contains(Vector3I point) => point.X >= position.X && point.Y >= position.Y && point.Z >= position.Z 
+        && point.X < position.X + size.X && point.Y < position.Y + size.Y && point.Z < position.Z + size.Z;
+
+    public bool Intersect(Aabbi bounds) => 
+        position.X          <= bounds.position.X + bounds.size.X &&
+        position.X + size.X >= bounds.position.X                 &&
+        position.Y          <= bounds.position.Y + bounds.size.Y &&
+        position.Y + size.Y >= bounds.position.Y                 &&
+        position.Z          <= bounds.position.Z + bounds.size.Z &&
+        position.Z + size.Z >= bounds.position.Z                   ;
+
+    public Aabbi Encapsulate(Vector3I point) 
+    {
+        int x = position.X, y = position.Y, z = position.Z;
+        int sX = size.X, sY = size.Y, sZ = size.Z;
+
+        if(x > point.X) x = point.X;
+        if(y > point.Y) y = point.Y;
+        if(z > point.Z) z = point.Z;
+
+        if(x + sX < point.X) sX = point.X - x;
+        if(y + sY < point.Y) sY = point.Y - y;
+        if(z + sZ < point.Z) sZ = point.Z - z;
+
+        return new Aabbi(new Vector3I(x, y, z), new Vector3I(sX, sY, sZ));
+    }
+
+    public Aabbi Expand(Aabbi bounds) => Encapsulate(bounds.Min).Encapsulate(bounds.Max);
+}

@@ -27,6 +27,7 @@ project/assembly_name="Alienation"
 
 [filesystem]
 
+import/blender/enabled=false
 import/fbx/enabled=false
 
 [rendering]

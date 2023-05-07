@@ -20,6 +20,11 @@ public partial class ObjectManager : Manager<ObjectManager>
         effects = new MasterToGlobal<StatusEffectAsset>(HashUtils.HashASCII, effectsCapacity);
     }
 
+    public override void AllManagersReady()
+    {
+        EndInit();
+    }
+
     public static ItemAsset GetItem(ulong globalID) => Instance.items[globalID];
     public static void AddItems(params ItemAsset[] items) 
     { 

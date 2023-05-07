@@ -39,6 +39,78 @@ public static class Utils
 
     public static float Mod(float x, float y) => (y / 2) - (y / Mathf.Pi) * Mathf.Atan(1.0f / Mathf.Tan((x / y) * Mathf.Pi));
 
+    /// <summary>A power function which doesn't deal with fractional exponents.</summary>
+    /// <param name="x">The value to multiply by itself.</param>
+    /// <param name="exponent">How many times you multiply.</param>
+    public static double SimplePow(double x, byte exponent)
+    {
+        if(exponent == 0)
+            return 1;
+
+        double res = x;
+        for(int i = 1; i < exponent; i++)
+            res *= x;
+        return res;
+    }
+
+    /// <summary>A power function which doesn't deal with fractional exponents.</summary>
+    /// <param name="x">The value to multiply by itself.</param>
+    /// <param name="exponent">How many times you multiply.</param>
+    public static float SimplePow(float x, byte exponent)
+    {
+        if(exponent == 0)
+            return 1;
+
+        float res = x;
+        for(int i = 1; i < exponent; i++)
+            res *= x;
+        return res;
+    }
+
+    public static string FormatDecimal(this double value, byte decimalCount)
+    {
+        double decimalPower = SimplePow(10, decimalCount);
+        double rounded = Mathf.Round(value * decimalPower) / decimalPower;
+        string result = rounded.ToString();
+
+        if(decimalPower == 1)
+            return result;
+
+        int dotI = result.LastIndexOf('.');
+
+        if(dotI == -1)
+            return string.Concat(result, '.', new string('0', decimalCount));
+
+        int length = result.Substring(dotI + 1).Length;
+
+        if(length == decimalCount)
+            return result;
+
+        return string.Concat(result, '.', new string('0', decimalCount - length));
+    }
+
+    public static string FormatDecimal(this float value, byte decimalCount)
+    {
+        float decimalPower = SimplePow(10, decimalCount);
+        float rounded = Mathf.Round(value * decimalPower) / decimalPower;
+        string result = rounded.ToString();
+
+        if(decimalPower == 1)
+            return result;
+
+        int dotI = result.LastIndexOf('.');
+
+        if(dotI == -1)
+            return string.Concat(result, '.', new string('0', decimalCount));
+
+        int length = result.Substring(dotI + 1).Length;
+
+        if(length == decimalCount)
+            return result;
+
+        return string.Concat(result, '.', new string('0', decimalCount - length));
+    }
+
     public static void Resize(this MultiMesh multimesh, int count)
     {
         int smallest = multimesh.InstanceCount < count ? multimesh.InstanceCount : count;

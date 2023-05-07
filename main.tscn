@@ -1,5 +1,7 @@
-[gd_scene load_steps=34 format=3 uid="uid://d48jqrttt76"]
+[gd_scene load_steps=36 format=3 uid="uid://d48jqrttt76"]
 
+[ext_resource type="Script" path="res://logics/managers/MainManager.cs" id="1_hyjko"]
+[ext_resource type="Resource" uid="uid://boqxw4nj5pn20" path="res://assets/managers/ObjectManager.tres" id="2_kpewk"]
 [ext_resource type="Texture2D" uid="uid://b4gkohdvc6obv" path="res://graphics/textures/circle.png" id="4_2djub"]
 [ext_resource type="ArrayMesh" uid="uid://d2mcetw4xpgnu" path="res://graphics/models/ship_interior/Room_Wall.res" id="4_ca50n"]
 [ext_resource type="Script" path="res://logics/structures/StructureRenderer.cs" id="4_it860"]
@@ -163,6 +165,10 @@ plane = Plane(0, 1, 0, -0.05)
 data = PackedVector3Array(1, 1.5, -1.5, -1, 0, -4, 1, 0, -4, 1, 1.5, -1.5, -1, 1.5, -1.5, -1, 0, -4, 1, 3, 1, -1, 1.5, -1.5, 1, 1.5, -1.5, 1, 3, 1, -1, 3, 1, -1, 1.5, -1.5, -1, 1.5, -1, 1, 0, -1, -1, 0, -1, -1, 1.5, -1, 1, 1.5, -1, 1, 0, -1, -1, 2.4, 0.6, 1, 1.5, -1, -1, 1.5, -1, -1, 2.4, 0.6, 1, 2.4, 0.6, 1, 1.5, -1, -1, 2.4, 1, 1, 2.4, 0.6, -1, 2.4, 0.6, -1, 2.4, 1, 1, 2.4, 1, 1, 2.4, 0.6, 1, 1.5, -1, 1, 0, -4, 1, 0, -1, 1, 1.5, -1, 1, 1.5, -1.5, 1, 0, -4, -1, 1.5, -1.5, -1, 0, -1, -1, 0, -4, -1, 1.5, -1.5, -1, 1.5, -1, -1, 0, -1, -1, 3, 1, -1, 1.5, -1, -1, 1.5, -1.5, -1, 3, 1, -1, 2.4, 0.6, -1, 1.5, -1, -1, 2.4, 0.6, -1, 3, 1, -1, 2.4, 1, 1, 2.4, 0.6, 1, 1.5, -1.5, 1, 1.5, -1, 1, 2.4, 0.6, 1, 3, 1, 1, 1.5, -1.5, 1, 2.4, 0.6, 1, 2.4, 1, 1, 3, 1)
 
 [node name="Node3D" type="Node3D"]
+
+[node name="MainManager" type="Node" parent="."]
+script = ExtResource("1_hyjko")
+managers = Array[Resource]([ExtResource("2_kpewk")])
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = ExtResource("7_ypy6o")

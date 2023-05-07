@@ -1,50 +1,45 @@
 using Godot;
 using System;
 
-public class ObjectManager
+public partial class ObjectManager : Manager<ObjectManager>
 {
-    private static ObjectManager instance;
+    [Export] private int itemCapacity;
+    [Export] private int effectsCapacity;
 
-    MasterToGlobal<ItemAsset> items;
-    MasterToGlobal<StatusEffectAsset> effects;
+    private MasterToGlobal<ItemAsset> items;
+    private MasterToGlobal<StatusEffectAsset> effects;
 
     /// <summary>
     /// After the init phase, items cannot be added.
     /// </summary>
     private bool pastInitPhase;
 
-    public ObjectManager(int itemCapacity = 0, int effectsCapacity = 0)
+    public override void Ready()
     {
-        if(instance != null)
-            throw new Exception("ObjectManager already exist !");
-
-        instance = this;
         items = new MasterToGlobal<ItemAsset>(HashUtils.HashASCII, itemCapacity);
         effects = new MasterToGlobal<StatusEffectAsset>(HashUtils.HashASCII, effectsCapacity);
     }
 
-    public static ObjectManager Get => instance;
-
-    public static ItemAsset GetItem(ulong globalID) => Get.items[globalID];
+    public static ItemAsset GetItem(ulong globalID) => Instance.items[globalID];
     public static void AddItems(params ItemAsset[] items) 
     { 
-        if(Get.pastInitPhase)
+        if(Instance.pastInitPhase)
             throw new Exception("Cannot add items after the init phase !");
 
-        Get.items.AddRange(items);
+        Instance.items.AddRange(items);
     }
 
-    public static StatusEffectAsset GetEffect(ulong globalID) => Get.effects[globalID];
+    public static StatusEffectAsset GetEffect(ulong globalID) => Instance.effects[globalID];
     public static void AddItems(params StatusEffectAsset[] items) 
     { 
-        if(Get.pastInitPhase)
+        if(Instance.pastInitPhase)
             throw new Exception("Cannot add items after the init phase !");
 
-        Get.effects.AddRange(items);
+        Instance.effects.AddRange(items);
     }
 
     public static void EndInit()
     {
-        Get.pastInitPhase = true;
+        Instance.pastInitPhase = true;
     }
 }

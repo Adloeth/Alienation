@@ -1,0 +1,10 @@
+[gd_resource type="Resource" load_steps=2 format=3 uid="uid://boqxw4nj5pn20"]
+
+[ext_resource type="Script" path="res://logics/managers/ObjectManager.cs" id="1_5biee"]
+
+[resource]
+script = ExtResource("1_5biee")
+itemCapacity = 0
+effectsCapacity = 0
+priority = 0
+active = false

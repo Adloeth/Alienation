@@ -1,0 +1,8 @@
+[gd_resource type="Resource" load_steps=2 format=3 uid="uid://bhbk8k24nhbw2"]
+
+[ext_resource type="Script" path="res://logics/managers/SettingsManager.cs" id="1_aite1"]
+
+[resource]
+script = ExtResource("1_aite1")
+priority = 0
+active = true

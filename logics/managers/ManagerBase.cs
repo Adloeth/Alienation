@@ -2,8 +2,8 @@ using Godot;
 
 public abstract partial class ManagerBase : Resource
 {
-    [Export] private sbyte priority;
-    [Export] private bool active;
+    [Export] protected sbyte priority;
+    [Export] protected bool active = true;
     public sbyte Priority => priority;
     public bool IsActive { get => active; set => active = value; }
 

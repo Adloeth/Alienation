@@ -1,8 +1,10 @@
-[gd_scene load_steps=36 format=3 uid="uid://d48jqrttt76"]
+[gd_scene load_steps=38 format=3 uid="uid://d48jqrttt76"]
 
 [ext_resource type="Script" path="res://logics/managers/MainManager.cs" id="1_hyjko"]
-[ext_resource type="Resource" uid="uid://boqxw4nj5pn20" path="res://assets/managers/ObjectManager.tres" id="2_kpewk"]
+[ext_resource type="Resource" uid="uid://cxfrnwl1lbeaw" path="res://assets/managers/ObjectManager.tres" id="2_bte83"]
+[ext_resource type="Resource" uid="uid://bex6laklxcjd8" path="res://assets/managers/PathManager.tres" id="3_vvcd2"]
 [ext_resource type="Texture2D" uid="uid://b4gkohdvc6obv" path="res://graphics/textures/circle.png" id="4_2djub"]
+[ext_resource type="Resource" uid="uid://bhbk8k24nhbw2" path="res://assets/managers/SettingsManager.tres" id="4_bbqf3"]
 [ext_resource type="ArrayMesh" uid="uid://d2mcetw4xpgnu" path="res://graphics/models/ship_interior/Room_Wall.res" id="4_ca50n"]
 [ext_resource type="Script" path="res://logics/structures/StructureRenderer.cs" id="4_it860"]
 [ext_resource type="ArrayMesh" uid="uid://b7xwmfobcp3ji" path="res://graphics/models/ship_interior/Room_WallShort.res" id="5_xlj1e"]
@@ -168,7 +170,7 @@ data = PackedVector3Array(1, 1.5, -1.5, -1, 0, -4, 1, 0, -4, 1, 1.5, -1.5, -1, 1
 
 [node name="MainManager" type="Node" parent="."]
 script = ExtResource("1_hyjko")
-managers = Array[Resource]([ExtResource("2_kpewk")])
+managers = Array[Resource]([ExtResource("2_bte83"), ExtResource("3_vvcd2"), ExtResource("4_bbqf3")])
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = ExtResource("7_ypy6o")
@@ -340,10 +342,11 @@ skeleton = NodePath("")
 shape = SubResource("WorldBoundaryShape3D_xcp6c")
 
 [node name="OmniLight3D" type="OmniLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.15618, 7.69711, -3.65782)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.15618, 2.23189, -3.65782)
+visible = false
 shadow_enabled = true
 shadow_blur = 3.0
-omni_range = 100.0
+omni_range = 50.0
 
 [node name="MeshInstance3D2" type="MeshInstance3D" parent="."]
 transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 15, 0, -10)

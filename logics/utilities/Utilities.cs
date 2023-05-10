@@ -108,7 +108,7 @@ public static class Utils
         if(length == decimalCount)
             return result;
 
-        return string.Concat(result, '.', new string('0', decimalCount - length));
+        return string.Concat(result, new string('0', decimalCount - length));
     }
 
     public static void Resize(this MultiMesh multimesh, int count)
